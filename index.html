@@ -1,0 +1,1359 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  Search, ShieldCheck, Zap, Gauge, Calendar, Fuel, CheckCircle2, 
+  AlertCircle, ChevronRight, SlidersHorizontal, ArrowUpDown, 
+  Car, Heart, Share2, Phone, MessageSquare, Scale, X, FileText, 
+  HelpCircle, Sparkles, PlusCircle, BatteryCharging, ExternalLink,
+  ChevronLeft, Award, Layers, DollarSign, Filter
+} from 'lucide-react';
+
+// Przykładowa baza realistycznych samochodów ze zweryfikowanymi danymi i zdjęciami
+const INITIAL_CARS = [
+  {
+    id: 'car-1',
+    make: 'Porsche',
+    model: 'Taycan 4S Cross Turismo',
+    year: 2023,
+    mileage: 24500,
+    price: 439000,
+    marketAvgPrice: 472000,
+    priceRating: 'great', // great | good | fair | high
+    fuelType: 'Elektryczny',
+    power: '530 KM',
+    gearbox: 'Automatyczna 2-biegowa',
+    drive: 'AWD (4x4)',
+    vin: 'WP0ZZZY1ZPSA89201',
+    isVinVerified: true,
+    isAccidentFree: true,
+    paintThicknessMax: 115, // mikrony (oryginalny fabryczny lakier ~90-130)
+    batteryHealthSoH: 98, // % kondycji baterii EV
+    location: 'Warszawa, Wilanów',
+    sellerType: 'Dealer Certyfikowany',
+    sellerName: 'Porsche Centrum Warszawa Południe',
+    sellerRating: 4.9,
+    sellerReviewsCount: 84,
+    monthlyLease: 4120,
+    images: [
+      'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1200&q=80'
+    ],
+    highlight: 'Gwarancja fabryczna Porsche Approved do 2026',
+    priceHistory: [
+      { date: 'Październik 2024', price: 459000 },
+      { date: 'Listopad 2024', price: 449000 },
+      { date: 'Grudzień 2024', price: 439000 }
+    ],
+    inspection120Points: { passed: 120, total: 120, status: 'Perfekcyjny' }
+  },
+  {
+    id: 'car-2',
+    make: 'BMW',
+    model: 'M3 Touring Competition xDrive',
+    year: 2023,
+    mileage: 18200,
+    price: 469000,
+    marketAvgPrice: 485000,
+    priceRating: 'great',
+    fuelType: 'Benzyna',
+    power: '510 KM',
+    gearbox: 'M Steptronic 8-biegów',
+    drive: 'M xDrive (4x4)',
+    vin: 'WBA33AY07PFP48123',
+    isVinVerified: true,
+    isAccidentFree: true,
+    paintThicknessMax: 120,
+    location: 'Wrocław, Krzyki',
+    sellerType: 'Sprzedawca Prywatny',
+    sellerName: 'Tomasz K.',
+    sellerRating: 5.0,
+    sellerReviewsCount: 12,
+    monthlyLease: 4480,
+    images: [
+      'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1200&q=80'
+    ],
+    highlight: 'Pierwszy właściciel, salon Polska, folia PPF Full Body',
+    priceHistory: [
+      { date: 'Wrzesień 2024', price: 480000 },
+      { date: 'Listopad 2024', price: 469000 }
+    ],
+    inspection120Points: { passed: 119, total: 120, status: 'Wzorowy (mikro rysa na feldze)' }
+  },
+  {
+    id: 'car-3',
+    make: 'Tesla',
+    model: 'Model 3 Highland Long Range',
+    year: 2024,
+    mileage: 11200,
+    price: 189900,
+    marketAvgPrice: 194000,
+    priceRating: 'good',
+    fuelType: 'Elektryczny',
+    power: '498 KM',
+    gearbox: 'Automatyczna bezpośrednia',
+    drive: 'Dual Motor AWD',
+    vin: 'XP7YGCEKXPB109245',
+    isVinVerified: true,
+    isAccidentFree: true,
+    paintThicknessMax: 110,
+    batteryHealthSoH: 99,
+    location: 'Gdańsk, Oliwa',
+    sellerType: 'Dealer Partnerski',
+    sellerName: 'EV Polska Sp. z o.o.',
+    sellerRating: 4.8,
+    sellerReviewsCount: 38,
+    monthlyLease: 1820,
+    images: [
+      'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&w=1200&q=80'
+    ],
+    highlight: 'Wersja po facelifcie Highland z wentylowanymi fotelami i wyciszeniem',
+    priceHistory: [
+      { date: 'Listopad 2024', price: 189900 }
+    ],
+    inspection120Points: { passed: 120, total: 120, status: 'Perfekcyjny' }
+  },
+  {
+    id: 'car-4',
+    make: 'Audi',
+    model: 'RS6 Avant performance Quattro',
+    year: 2022,
+    mileage: 46000,
+    price: 529000,
+    marketAvgPrice: 519000,
+    priceRating: 'fair',
+    fuelType: 'Benzyna',
+    power: '630 KM',
+    gearbox: 'Tiptronic 8-biegów',
+    drive: 'Quattro',
+    vin: 'WAUZZZF27NA019234',
+    isVinVerified: true,
+    isAccidentFree: true,
+    paintThicknessMax: 140,
+    location: 'Kraków, Podgórze',
+    sellerType: 'Salon Aut Używanych',
+    sellerName: 'Veloce Prestige Motors',
+    sellerRating: 4.9,
+    sellerReviewsCount: 115,
+    monthlyLease: 5150,
+    images: [
+      'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1200&q=80'
+    ],
+    highlight: 'Wydech Akrapovič Titanium, pakiet Carbon, ceramika lakieru',
+    priceHistory: [
+      { date: 'Październik 2024', price: 549000 },
+      { date: 'Listopad 2024', price: 529000 }
+    ],
+    inspection120Points: { passed: 118, total: 120, status: 'Bardzo dobry' }
+  },
+  {
+    id: 'car-5',
+    make: 'Toyota',
+    model: 'RAV4 Plug-in Hybrid Selection',
+    year: 2023,
+    mileage: 31000,
+    price: 189000,
+    marketAvgPrice: 205000,
+    priceRating: 'great',
+    fuelType: 'Hybryda Plug-in',
+    power: '306 KM',
+    gearbox: 'e-CVT',
+    drive: 'AWD-i',
+    vin: 'JTMB63FV90D018239',
+    isVinVerified: true,
+    isAccidentFree: true,
+    paintThicknessMax: 105,
+    batteryHealthSoH: 97,
+    location: 'Poznań, Grunwald',
+    sellerType: 'Dealer Certyfikowany',
+    sellerName: 'Toyota Pewne Auto',
+    sellerRating: 4.7,
+    sellerReviewsCount: 65,
+    monthlyLease: 1790,
+    images: [
+      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1590362891988-f778047831d6?auto=format&fit=crop&w=1200&q=80'
+    ],
+    highlight: 'Do 75 km w trybie 100% elektrycznym EV, faktura VAT 23%',
+    priceHistory: [
+      { date: 'Listopad 2024', price: 189000 }
+    ],
+    inspection120Points: { passed: 120, total: 120, status: 'Bez uwag' }
+  },
+  {
+    id: 'car-6',
+    make: 'Volvo',
+    model: 'XC60 T8 Recharge Ultimate Dark',
+    year: 2022,
+    mileage: 38500,
+    price: 249000,
+    marketAvgPrice: 259000,
+    priceRating: 'good',
+    fuelType: 'Hybryda Plug-in',
+    power: '455 KM',
+    gearbox: 'Geartronic 8-biegów',
+    drive: 'AWD',
+    vin: 'YV4BR00U4N1029384',
+    isVinVerified: true,
+    isAccidentFree: true,
+    paintThicknessMax: 125,
+    batteryHealthSoH: 96,
+    location: 'Katowice, Śródmieście',
+    sellerType: 'Dealer Certyfikowany',
+    sellerName: 'Volvo Selekt Silesia',
+    sellerRating: 4.9,
+    sellerReviewsCount: 92,
+    monthlyLease: 2390,
+    images: [
+      'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1200&q=80'
+    ],
+    highlight: 'Nagłośnienie Bowers & Wilkins, zawieszenie pneumatyczne',
+    priceHistory: [
+      { date: 'Wrzesień 2024', price: 265000 },
+      { date: 'Listopad 2024', price: 249000 }
+    ],
+    inspection120Points: { passed: 120, total: 120, status: 'Perfekcyjny' }
+  }
+];
+
+export default function App() {
+  const [cars, setCars] = useState(INITIAL_CARS);
+  const [selectedMake, setSelectedMake] = useState('Wszystkie');
+  const [selectedFuel, setSelectedFuel] = useState('Wszystkie');
+  const [maxPrice, setMaxPrice] = useState(600000);
+  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [onlyAccidentFree, setOnlyAccidentFree] = useState(false);
+  const [sortBy, setSortBy] = useState('dealScore'); // dealScore, priceAsc, priceDesc, newest
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Ulubione i Porównywarka
+  const [favorites, setFavorites] = useState(['car-1']);
+  const [compareList, setCompareList] = useState([]);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+
+  // Modal pojedynczego auta
+  const [activeCarModal, setActiveCarModal] = useState(null);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+
+  // Modal kalkulatora leasingowego
+  const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
+  const [calcCar, setCalcCar] = useState(null);
+  const [downPaymentPct, setDownPaymentPct] = useState(20);
+  const [leaseMonths, setLeaseMonths] = useState(48);
+
+  // Modal dodawania ogłoszenia po VIN
+  const [isAddCarModalOpen, setIsAddCarModalOpen] = useState(false);
+  const [newVin, setNewVin] = useState('');
+  const [vinLoading, setVinLoading] = useState(false);
+  const [decodedData, setDecodedData] = useState(null);
+  const [newCarPrice, setNewCarPrice] = useState('');
+  const [newCarMileage, setNewCarMileage] = useState('');
+
+  // Powiadomienie toast
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Obsługa ulubionych
+  const toggleFavorite = (id, e) => {
+    e.stopPropagation();
+    if (favorites.includes(id)) {
+      setFavorites(favorites.filter(item => item !== id));
+      showToast('Usunięto z obserwowanych');
+    } else {
+      setFavorites([...favorites, id]);
+      showToast('Dodano pojazd do obserwowanych!');
+    }
+  };
+
+  // Obsługa porównywarki
+  const toggleCompare = (car, e) => {
+    e.stopPropagation();
+    const exists = compareList.find(c => c.id === car.id);
+    if (exists) {
+      setCompareList(compareList.filter(c => c.id !== car.id));
+      showToast(`Usunięto ${car.make} ${car.model} z porównywarki`);
+    } else {
+      if (compareList.length >= 3) {
+        showToast('Możesz porównać maksymalnie 3 auta naraz.');
+        return;
+      }
+      setCompareList([...compareList, car]);
+      showToast(`Dodano do porównania (${compareList.length + 1}/3)`);
+    }
+  };
+
+  // Filtrowanie i sortowanie aut
+  const filteredCars = useMemo(() => {
+    return cars.filter(car => {
+      if (selectedMake !== 'Wszystkie' && car.make !== selectedMake) return false;
+      if (selectedFuel !== 'Wszystkie' && car.fuelType !== selectedFuel) return false;
+      if (car.price > maxPrice) return false;
+      if (onlyVerified && !car.isVinVerified) return false;
+      if (onlyAccidentFree && !car.isAccidentFree) return false;
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        const fullText = `${car.make} ${car.model} ${car.location} ${car.vin}`.toLowerCase();
+        if (!fullText.includes(query)) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      if (sortBy === 'dealScore') {
+        // Algorytm opłacalności: różnica pomiędzy rynkową a oferowaną
+        const diffA = a.marketAvgPrice - a.price;
+        const diffB = b.marketAvgPrice - b.price;
+        return diffB - diffA;
+      }
+      if (sortBy === 'priceAsc') return a.price - b.price;
+      if (sortBy === 'priceDesc') return b.price - a.price;
+      if (sortBy === 'newest') return b.year - a.year;
+      return 0;
+    });
+  }, [cars, selectedMake, selectedFuel, maxPrice, onlyVerified, onlyAccidentFree, sortBy, searchQuery]);
+
+  // Symulacja dekodera VIN
+  const handleDecodeVin = () => {
+    if (!newVin || newVin.length < 8) {
+      showToast('Wprowadź prawidłowy numer VIN (np. WBA...)');
+      return;
+    }
+    setVinLoading(true);
+    setTimeout(() => {
+      setVinLoading(false);
+      setDecodedData({
+        make: 'Mercedes-Benz',
+        model: 'EQE 350+ AMG Line',
+        year: 2023,
+        fuelType: 'Elektryczny',
+        power: '292 KM',
+        gearbox: 'Automatyczna',
+        drive: 'RWD (Napęd na tył)',
+        cepikStatus: 'Zarejestrowany w Polsce (Brak wpisów o szkodzie całkowitej)',
+        batteryHealth: 99
+      });
+      showToast('VIN pomyślnie zdekodowany z bazy CEPiK!');
+    }, 900);
+  };
+
+  const handleAddNewCar = (e) => {
+    e.preventDefault();
+    if (!decodedData || !newCarPrice || !newCarMileage) {
+      showToast('Uzupełnij wszystkie wymagane pola');
+      return;
+    }
+    const created = {
+      id: `car-${Date.now()}`,
+      make: decodedData.make,
+      model: decodedData.model,
+      year: decodedData.year,
+      mileage: parseInt(newCarMileage, 10),
+      price: parseInt(newCarPrice, 10),
+      marketAvgPrice: parseInt(newCarPrice, 10) + 12000,
+      priceRating: 'great',
+      fuelType: decodedData.fuelType,
+      power: decodedData.power,
+      gearbox: decodedData.gearbox,
+      drive: decodedData.drive,
+      vin: newVin.toUpperCase(),
+      isVinVerified: true,
+      isAccidentFree: true,
+      paintThicknessMax: 110,
+      batteryHealthSoH: decodedData.batteryHealth,
+      location: 'Warszawa, Śródmieście',
+      sellerType: 'Osoba Prywatna',
+      sellerName: 'Ty (Zweryfikowany)',
+      sellerRating: 5.0,
+      sellerReviewsCount: 1,
+      monthlyLease: Math.round(parseInt(newCarPrice, 10) * 0.0095),
+      images: [
+        'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80'
+      ],
+      highlight: 'Zweryfikowano z CEPiK, natychmiastowa publikacja',
+      priceHistory: [{ date: 'Dziś', price: parseInt(newCarPrice, 10) }],
+      inspection120Points: { passed: 120, total: 120, status: 'Certyfikat MotoSpot Verified' }
+    };
+
+    setCars([created, ...cars]);
+    setIsAddCarModalOpen(false);
+    setNewVin('');
+    setDecodedData(null);
+    setNewCarPrice('');
+    setNewCarMileage('');
+    showToast('Twoje ogłoszenie zostało opublikowane ZA DARMO!');
+  };
+
+  // Helper do plakietki wyceny Trust Score
+  const getBadgeStyle = (rating, diff) => {
+    switch (rating) {
+      case 'great':
+        return {
+          label: `Super Okazja (-${Math.abs(diff).toLocaleString('pl-PL')} zł vs rynek)`,
+          classes: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+        };
+      case 'good':
+        return {
+          label: `Dobra Cena (-${Math.abs(diff).toLocaleString('pl-PL')} zł)`,
+          classes: 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+        };
+      case 'fair':
+        return {
+          label: 'Wycena Rynkowa (Optymalna)',
+          classes: 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+        };
+      default:
+        return {
+          label: 'Wyższa wycena',
+          classes: 'bg-slate-500/20 text-slate-300 border-slate-500/40'
+        };
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans selection:bg-emerald-500 selection:text-black">
+      
+      {/* Toast Alert Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600/95 text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-emerald-950/60 backdrop-blur-md border border-emerald-400/30 animate-in fade-in slide-in-from-bottom duration-200">
+          <Sparkles className="w-5 h-5 text-emerald-200" />
+          <span className="text-sm font-semibold">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* HEADER / NAVIGATION */}
+      <header className="sticky top-0 z-40 bg-[#0B0F17]/90 backdrop-blur-xl border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+          
+          {/* Logo i Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-300 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <Car className="w-6 h-6 text-black stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black tracking-tight text-white">Moto<span className="text-emerald-400">Spot</span></span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Next-Gen</span>
+              </div>
+              <p className="text-xs text-slate-400 hidden sm:block">Rewolucja transparentności: Bez ukrytych wad, 100% VIN</p>
+            </div>
+          </div>
+
+          {/* Szybkie Wyszukiwanie */}
+          <div className="flex-1 max-w-md hidden md:block">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Wyszukaj model, np. Taycan, RS6, M3, VIN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-500 transition-all text-white"
+              />
+            </div>
+          </div>
+
+          {/* Przyciski Akcji */}
+          <div className="flex items-center gap-2.5">
+            {/* Porównywarka Button */}
+            <button 
+              onClick={() => setIsCompareModalOpen(true)}
+              className="relative p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700/70 text-slate-300 hover:text-white transition-colors"
+              title="Porównaj wybrane samochody"
+            >
+              <Scale className="w-5 h-5" />
+              {compareList.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
+                  {compareList.length}
+                </span>
+              )}
+            </button>
+
+            {/* Obserwowane Button */}
+            <button 
+              onClick={() => showToast(`Obserwujesz ${favorites.length} pojazdów`)}
+              className="relative p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700/70 text-slate-300 hover:text-white transition-colors"
+              title="Ulubione ogłoszenia"
+            >
+              <Heart className={`w-5 h-5 ${favorites.length > 0 ? 'text-rose-400 fill-rose-400/20' : ''}`} />
+              {favorites.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {favorites.length}
+                </span>
+              )}
+            </button>
+
+            {/* Dodaj ogłoszenie za 0 zł */}
+            <button 
+              onClick={() => setIsAddCarModalOpen(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-sm shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02]"
+            >
+              <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+              <span className="hidden sm:inline">Wystaw z VIN (0 zł)</span>
+              <span className="sm:hidden">Wystaw</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* HERO BANNER - PRZEWAGA NAD OTOMOTO */}
+      <section className="bg-gradient-to-b from-slate-900/70 via-slate-900/30 to-transparent border-b border-slate-800/50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 backdrop-blur-sm flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white text-sm">Wycena Rynkowa AI & Trust Score</h4>
+                <p className="text-xs text-slate-400 mt-1">Koniec ze sztucznie zawyżanymi cenami. Każda oferta ma wskaźnik opłacalności względem transakcji w Polsce.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 backdrop-blur-sm flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20 shrink-0">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white text-sm">Audyt 120 Punktów i Miernik Lakieru</h4>
+                <p className="text-xs text-slate-400 mt-1">Grubość powłoki lakierniczej na każdym elemencie i kondycja baterii trakcyjnej (SoH) dla aut EV/Hybryd.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 backdrop-blur-sm flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white text-sm">Zero Ukrytych Opłat dla Sprzedających</h4>
+                <p className="text-xs text-slate-400 mt-1">Otomoto pobiera setki złotych za pakiet. W MotoSpot pierwsze ogłoszenie ze zweryfikowanym VIN masz za 0 zł.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* GŁÓWNA ZAWARTOŚĆ: FILTRY + LISTA SAMOCHODÓW */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* PANEL FILTRÓW NOWEJ GENERACJI */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 mb-8 shadow-2xl backdrop-blur-sm">
+          
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-2 text-white font-bold">
+              <SlidersHorizontal className="w-5 h-5 text-emerald-400" />
+              <span>Inteligentne Filtry Wyszukiwania</span>
+              <span className="text-xs font-medium text-slate-400 ml-2">({filteredCars.length} znalezionych aut)</span>
+            </div>
+
+            {/* Sortowanie */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-slate-400" />
+              <span className="text-xs text-slate-400 hidden sm:inline">Sortuj:</span>
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="dealScore">Najlepsza okazja (Trust AI)</option>
+                <option value="priceAsc">Cena: od najniższej</option>
+                <option value="priceDesc">Cena: od najwyższej</option>
+                <option value="newest">Najmłodszy rocznik</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+            
+            {/* Marka */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Marka pojazdu</label>
+              <select 
+                value={selectedMake} 
+                onChange={(e) => setSelectedMake(e.target.value)}
+                className="w-full bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              >
+                <option value="Wszystkie">Wszystkie marki</option>
+                <option value="Porsche">Porsche</option>
+                <option value="BMW">BMW</option>
+                <option value="Audi">Audi</option>
+                <option value="Tesla">Tesla</option>
+                <option value="Toyota">Toyota</option>
+                <option value="Volvo">Volvo</option>
+                <option value="Mercedes-Benz">Mercedes-Benz</option>
+              </select>
+            </div>
+
+            {/* Napęd / Paliwo */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Rodzaj napędu</label>
+              <select 
+                value={selectedFuel} 
+                onChange={(e) => setSelectedFuel(e.target.value)}
+                className="w-full bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              >
+                <option value="Wszystkie">Wszystkie rodzaje paliwa</option>
+                <option value="Elektryczny">Elektryczny (EV)</option>
+                <option value="Hybryda Plug-in">Hybryda Plug-in (PHEV)</option>
+                <option value="Benzyna">Benzyna</option>
+              </select>
+            </div>
+
+            {/* Suwak budżetu */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Maks. Budżet</label>
+                <span className="text-xs font-bold text-emerald-400">{maxPrice.toLocaleString('pl-PL')} zł</span>
+              </div>
+              <input 
+                type="range" 
+                min="150000" 
+                max="600000" 
+                step="10000"
+                value={maxPrice} 
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="w-full accent-emerald-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            {/* Szybkie przełączniki zaufania */}
+            <div className="flex flex-col justify-end gap-2">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={onlyVerified} 
+                  onChange={(e) => setOnlyVerified(e.target.checked)}
+                  className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-slate-800 w-4 h-4"
+                />
+                <span className="text-xs text-slate-300 font-medium">Tylko 100% zweryfikowany VIN</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={onlyAccidentFree} 
+                  onChange={(e) => setOnlyAccidentFree(e.target.checked)}
+                  className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-slate-800 w-4 h-4"
+                />
+                <span className="text-xs text-slate-300 font-medium">Bezwypadkowe (Raport CEPiK)</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        {/* LISTA KART SAMOCHODÓW */}
+        {filteredCars.length === 0 ? (
+          <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800 p-8">
+            <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+            <h3 className="text-lg font-bold text-white">Brak pojazdów spełniających kryteria</h3>
+            <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
+              Spróbuj zwiększyć zakres budżetu lub odznaczyć wybrane filtry napędu.
+            </p>
+            <button 
+              onClick={() => {
+                setSelectedMake('Wszystkie');
+                setSelectedFuel('Wszystkie');
+                setMaxPrice(600000);
+                setOnlyVerified(false);
+                setOnlyAccidentFree(false);
+                setSearchQuery('');
+              }}
+              className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold rounded-xl text-sm transition-colors"
+            >
+              Zresetuj wszystkie filtry
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCars.map((car) => {
+              const diff = car.price - car.marketAvgPrice;
+              const badge = getBadgeStyle(car.priceRating, diff);
+              const isFav = favorites.includes(car.id);
+              const isCompared = compareList.some(c => c.id === car.id);
+
+              return (
+                <div 
+                  key={car.id} 
+                  onClick={() => {
+                    setActiveCarModal(car);
+                    setModalImageIndex(0);
+                  }}
+                  className="group bg-slate-900/90 rounded-3xl border border-slate-800/80 hover:border-emerald-500/50 shadow-xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-950/20 hover:-translate-y-1 cursor-pointer"
+                >
+                  {/* Zdjęcie i Plakietki */}
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
+                    <img 
+                      src={car.images[0]} 
+                      alt={`${car.make} ${car.model}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+
+                    {/* Plakietka Trust & Price Score */}
+                    <div className="absolute top-3 left-3">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md ${badge.classes}`}>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    {/* Przyciski Ulubione i Porównaj */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                      <button 
+                        onClick={(e) => toggleCompare(car, e)}
+                        className={`p-2 rounded-full backdrop-blur-md border transition-all ${
+                          isCompared 
+                            ? 'bg-emerald-500 border-emerald-400 text-black font-bold' 
+                            : 'bg-slate-900/70 border-slate-700/60 text-slate-300 hover:text-white'
+                        }`}
+                        title="Porównaj ten pojazd"
+                      >
+                        <Scale className="w-4 h-4" />
+                      </button>
+
+                      <button 
+                        onClick={(e) => toggleFavorite(car.id, e)}
+                        className={`p-2 rounded-full backdrop-blur-md border transition-all ${
+                          isFav 
+                            ? 'bg-rose-500/30 border-rose-500 text-rose-400' 
+                            : 'bg-slate-900/70 border-slate-700/60 text-slate-300 hover:text-rose-400'
+                        }`}
+                        title="Zapisz do obserwowanych"
+                      >
+                        <Heart className={`w-4 h-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />
+                      </button>
+                    </div>
+
+                    {/* Pasek wskaźnika stanu */}
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-300">
+                      <span className="inline-flex items-center gap-1 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-md border border-white/10">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        VIN: {car.vin.slice(0, 7)}...
+                      </span>
+
+                      {car.batteryHealthSoH && (
+                        <span className="inline-flex items-center gap-1 bg-emerald-950/80 text-emerald-300 px-2.5 py-1 rounded-lg backdrop-blur-md border border-emerald-500/30 font-semibold">
+                          <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" />
+                          Bateria: {car.batteryHealthSoH}% SoH
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Szczegóły Samochodu */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+                        <span>{car.sellerType}</span>
+                        <span>{car.location}</span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        {car.make} {car.model}
+                      </h3>
+                      
+                      <p className="text-xs text-slate-400 line-clamp-1 mt-1 mb-4">
+                        {car.highlight}
+                      </p>
+
+                      {/* Specyfikacja w pigułce */}
+                      <div className="grid grid-cols-3 gap-2 py-3 px-3 rounded-2xl bg-slate-800/40 border border-slate-800 text-center mb-4">
+                        <div>
+                          <div className="text-[10px] uppercase font-bold text-slate-500">Rok</div>
+                          <div className="text-xs font-semibold text-slate-200 mt-0.5">{car.year}</div>
+                        </div>
+                        <div className="border-x border-slate-700/50">
+                          <div className="text-[10px] uppercase font-bold text-slate-500">Przebieg</div>
+                          <div className="text-xs font-semibold text-slate-200 mt-0.5">{car.mileage.toLocaleString('pl-PL')} km</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase font-bold text-slate-500">Moc</div>
+                          <div className="text-xs font-semibold text-slate-200 mt-0.5">{car.power}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CENA & RATA MIESIĘCZNA */}
+                    <div className="pt-3 border-t border-slate-800/80 flex items-end justify-between">
+                      <div>
+                        <div className="text-xs text-slate-400 font-medium">Cena brutto:</div>
+                        <div className="text-xl font-extrabold text-white tracking-tight">
+                          {car.price.toLocaleString('pl-PL')} <span className="text-xs font-bold text-slate-400">PLN</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCalcCar(car);
+                            setIsCalculatorModalOpen(true);
+                          }}
+                          className="group/rate text-left hover:opacity-90 transition-opacity"
+                        >
+                          <div className="text-[11px] text-emerald-400 font-semibold flex items-center justify-end gap-1">
+                            Leasing od <ExternalLink className="w-2.5 h-2.5" />
+                          </div>
+                          <div className="text-sm font-bold text-slate-200">
+                            {car.monthlyLease.toLocaleString('pl-PL')} zł <span className="text-[10px] text-slate-400 font-normal">/mc</span>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+      </main>
+
+      {/* PASEK ZACZEPIONY PORÓWNYWARKI (JEŻELI COŚ JEST WYBRANE) */}
+      {compareList.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 border border-emerald-500/40 px-6 py-3.5 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-6 max-w-xl w-11/12 animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center gap-3">
+            <Scale className="w-5 h-5 text-emerald-400" />
+            <div>
+              <div className="text-sm font-bold text-white">Porównywarka aktywna</div>
+              <div className="text-xs text-slate-400">Wybrano {compareList.length} z 3 pojazdów</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <button 
+              onClick={() => setIsCompareModalOpen(true)}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors shadow-lg shadow-emerald-500/20"
+            >
+              Pokaż tabelę
+            </button>
+            <button 
+              onClick={() => setCompareList([])}
+              className="text-slate-400 hover:text-white p-2 rounded-xl"
+              title="Wyczyść porównanie"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: BOGATY PODGLĄD OGŁOSZENIA ZE SZCZEGÓŁAMI */}
+      {activeCarModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-[#0f1420] border border-slate-700/80 rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl relative text-slate-100">
+            
+            {/* Przycisk zamknięcia */}
+            <button 
+              onClick={() => setActiveCarModal(null)}
+              className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Galeria zdjęć */}
+            <div className="relative aspect-[16/9] w-full bg-slate-950 rounded-t-3xl overflow-hidden">
+              <img 
+                src={activeCarModal.images[modalImageIndex] || activeCarModal.images[0]} 
+                alt={activeCarModal.model}
+                className="w-full h-full object-cover"
+              />
+
+              {activeCarModal.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10">
+                  {activeCarModal.images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setModalImageIndex(idx)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${modalImageIndex === idx ? 'bg-emerald-400 w-6' : 'bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="absolute top-4 left-4">
+                <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 backdrop-blur-md">
+                  Zweryfikowany VIN & Bezpieczna Transakcja
+                </span>
+              </div>
+            </div>
+
+            {/* Treść Modala */}
+            <div className="p-6 sm:p-8 space-y-8">
+              
+              {/* Tytuł i Wycena */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-800">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+                    {activeCarModal.make} • {activeCarModal.fuelType}
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white">
+                    {activeCarModal.model}
+                  </h2>
+                  <p className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                    <span>Lokalizacja: {activeCarModal.location}</span>
+                    <span>•</span>
+                    <span>{activeCarModal.sellerName} (Ocena: ★ {activeCarModal.sellerRating})</span>
+                  </p>
+                </div>
+
+                <div className="text-left sm:text-right">
+                  <div className="text-3xl font-black text-white">
+                    {activeCarModal.price.toLocaleString('pl-PL')} <span className="text-sm font-semibold text-slate-400">PLN brutto</span>
+                  </div>
+                  <div className="text-sm text-emerald-400 font-semibold mt-1">
+                    Rata leasingowa od: {activeCarModal.monthlyLease.toLocaleString('pl-PL')} zł/mc
+                  </div>
+                </div>
+              </div>
+
+              {/* RAPORT PRZEJRZYSTOŚCI 360° (Trust Barometer) */}
+              <div className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800">
+                <div className="flex items-center gap-2 text-white font-bold mb-4">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <span>Raport Przejrzystości MotoSpot 360°</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60">
+                    <div className="text-[11px] text-slate-400 uppercase font-semibold">Numer VIN</div>
+                    <div className="text-xs font-mono font-bold text-white mt-1">{activeCarModal.vin}</div>
+                    <div className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Zgodny z CEPiK
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60">
+                    <div className="text-[11px] text-slate-400 uppercase font-semibold">Lakier (Maks. grubość)</div>
+                    <div className="text-sm font-bold text-white mt-1">{activeCarModal.paintThicknessMax} μm</div>
+                    <div className="text-[11px] text-emerald-400 mt-1">
+                      Oryginalna powłoka fabryczna
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60">
+                    <div className="text-[11px] text-slate-400 uppercase font-semibold">Inspekcja 120 Punktów</div>
+                    <div className="text-sm font-bold text-white mt-1">{activeCarModal.inspection120Points.passed} / {activeCarModal.inspection120Points.total} pkt</div>
+                    <div className="text-[11px] text-emerald-400 mt-1">
+                      {activeCarModal.inspection120Points.status}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60">
+                    <div className="text-[11px] text-slate-400 uppercase font-semibold">Wycena Rynkowa Algorytmu</div>
+                    <div className="text-sm font-bold text-white mt-1">{activeCarModal.marketAvgPrice.toLocaleString('pl-PL')} zł</div>
+                    <div className="text-[11px] text-emerald-400 mt-1">
+                      {activeCarModal.marketAvgPrice > activeCarModal.price 
+                        ? `Oszczędzasz ${(activeCarModal.marketAvgPrice - activeCarModal.price).toLocaleString('pl-PL')} zł`
+                        : 'Cena rynkowa'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* DANE TECHNICZNE */}
+              <div>
+                <h4 className="text-base font-bold text-white mb-3">Dane techniczne i specyfikacja</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-800/30 border border-slate-800">
+                    <span className="text-slate-400">Przebieg:</span>
+                    <p className="font-semibold text-white mt-1">{activeCarModal.mileage.toLocaleString('pl-PL')} km</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/30 border border-slate-800">
+                    <span className="text-slate-400">Moc silnika:</span>
+                    <p className="font-semibold text-white mt-1">{activeCarModal.power}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/30 border border-slate-800">
+                    <span className="text-slate-400">Skrzynia biegów:</span>
+                    <p className="font-semibold text-white mt-1">{activeCarModal.gearbox}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/30 border border-slate-800">
+                    <span className="text-slate-400">Napęd:</span>
+                    <p className="font-semibold text-white mt-1">{activeCarModal.drive}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* HISTORIA ZMIAN CEN (Price Drop Tracker) */}
+              <div>
+                <h4 className="text-base font-bold text-white mb-2">Historia cen tego egzemplarza</h4>
+                <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                  {activeCarModal.priceHistory.map((step, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/60 px-3 py-2 rounded-xl text-xs shrink-0">
+                      <span className="text-slate-400">{step.date}:</span>
+                      <span className="font-bold text-white">{step.price.toLocaleString('pl-PL')} zł</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* PRZYCISKI KONTAKTU I REZERWACJI */}
+              <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center gap-3">
+                <button 
+                  onClick={() => showToast('Rezerwacja online: Zwrotna kaucja 500 zł zablokowana na 48h')}
+                  className="w-full sm:flex-1 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold py-3.5 px-6 rounded-2xl shadow-xl shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+                  Zarezerwuj online (kaucja zwrotna 500 zł)
+                </button>
+
+                <button 
+                  onClick={() => showToast(`Darmowy raport PDF dla VIN: ${activeCarModal.vin} został wygenerowany!`)}
+                  className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3.5 px-5 rounded-2xl border border-slate-700 transition-colors text-xs flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  Darmowy raport PDF
+                </button>
+
+                <button 
+                  onClick={() => showToast('Numer telefonu sprzedawcy skopiowany do schowka: +48 22 890 00 00')}
+                  className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3.5 px-5 rounded-2xl border border-slate-700 transition-colors text-xs flex items-center justify-center gap-2"
+                >
+                  <Phone className="w-4 h-4 text-teal-400" />
+                  Zadzwoń
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: KALKULATOR FINANSOWANIA I LEASINGU */}
+      {isCalculatorModalOpen && calcCar && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 text-slate-100 shadow-2xl relative">
+            
+            <button 
+              onClick={() => setIsCalculatorModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Kalkulator Leasingowy / Kredyt</h3>
+                <p className="text-xs text-slate-400">{calcCar.make} {calcCar.model}</p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              
+              {/* Wpłata własna */}
+              <div>
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="text-slate-400 font-semibold">Wpłata własna: {downPaymentPct}%</span>
+                  <span className="font-bold text-emerald-400">
+                    {Math.round(calcCar.price * (downPaymentPct / 100)).toLocaleString('pl-PL')} zł
+                  </span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="45" 
+                  step="5"
+                  value={downPaymentPct} 
+                  onChange={(e) => setDownPaymentPct(Number(e.target.value))}
+                  className="w-full accent-emerald-500"
+                />
+              </div>
+
+              {/* Okres leasingu */}
+              <div>
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="text-slate-400 font-semibold">Okres finansowania:</span>
+                  <span className="font-bold text-emerald-400">{leaseMonths} miesięcy</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[24, 36, 48, 60].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setLeaseMonths(m)}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-colors ${
+                        leaseMonths === m 
+                          ? 'bg-emerald-500 text-black border-emerald-400' 
+                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                      }`}
+                    >
+                      {m} mc
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Podsumowanie Raty */}
+              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+                <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Szacowana rata miesięczna</div>
+                <div className="text-3xl font-black text-emerald-400 mt-1">
+                  {Math.round(
+                    ((calcCar.price * (1 - downPaymentPct / 100)) / leaseMonths) * 1.14
+                  ).toLocaleString('pl-PL')} <span className="text-sm font-semibold text-white">zł netto</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Wykup końcowy: 15% wartości • Decyzja leasingowa online w 15 minut
+                </p>
+              </div>
+
+              <button 
+                onClick={() => {
+                  showToast('Wniosek leasingowy przesłany! Doradca skontaktuje się w 15 minut.');
+                  setIsCalculatorModalOpen(false);
+                }}
+                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-2xl text-sm transition-colors shadow-lg shadow-emerald-500/20"
+              >
+                Złóż wniosek leasingowy 100% online
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: PORÓWNYWARKA SAMOCHODÓW BOK W BOK */}
+      {isCompareModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0e131d] border border-slate-700 rounded-3xl max-w-4xl w-full p-6 text-slate-100 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            
+            <button 
+              onClick={() => setIsCompareModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <Scale className="w-6 h-6 text-emerald-400" />
+              <div>
+                <h3 className="text-xl font-bold text-white">Porównanie pojazdów bok w bok</h3>
+                <p className="text-xs text-slate-400">Zestawienie parametrów technicznych i opłacalności</p>
+              </div>
+            </div>
+
+            {compareList.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">
+                <Car className="w-12 h-12 mx-auto text-slate-600 mb-2" />
+                <p className="text-sm">Nie dodano jeszcze żadnych aut do porównania.</p>
+                <p className="text-xs text-slate-500 mt-1">Kliknij ikonę wagi przy karcie auta, aby dodać je do tabeli.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      <th className="p-3 text-slate-400 text-xs font-normal">Parametr</th>
+                      {compareList.map(car => (
+                        <th key={car.id} className="p-3 min-w-[200px]">
+                          <div className="font-bold text-white">{car.make} {car.model}</div>
+                          <div className="text-xs text-emerald-400 font-semibold mt-0.5">{car.price.toLocaleString('pl-PL')} zł</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-xs">
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Rocznik</td>
+                      {compareList.map(car => <td key={car.id} className="p-3 font-semibold">{car.year}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Przebieg</td>
+                      {compareList.map(car => <td key={car.id} className="p-3">{car.mileage.toLocaleString('pl-PL')} km</td>)}
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Moc / Silnik</td>
+                      {compareList.map(car => <td key={car.id} className="p-3 font-semibold">{car.power} ({car.fuelType})</td>)}
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Napęd</td>
+                      {compareList.map(car => <td key={car.id} className="p-3">{car.drive}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Maks. lakier</td>
+                      {compareList.map(car => <td key={car.id} className="p-3 text-emerald-400 font-semibold">{car.paintThicknessMax} μm</td>)}
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Rata od</td>
+                      {compareList.map(car => <td key={car.id} className="p-3 font-bold text-white">{car.monthlyLease} zł/mc</td>)}
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-400 font-medium">Akcja</td>
+                      {compareList.map(car => (
+                        <td key={car.id} className="p-3">
+                          <button 
+                            onClick={() => {
+                              setActiveCarModal(car);
+                              setIsCompareModalOpen(false);
+                            }}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[11px] font-semibold"
+                          >
+                            Otwórz ofertę
+                          </button>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: DODAJ OGŁOSZENIE PO NUMERZE VIN (0 ZŁ) */}
+      {isAddCarModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0f1422] border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 text-slate-100 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            
+            <button 
+              onClick={() => setIsAddCarModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Wystaw auto za 0 zł</h3>
+                <p className="text-xs text-slate-400">Automatyczny dekoder CEPiK & VIN — bez żmudnego klikania</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddNewCar} className="space-y-4">
+              
+              {/* Krok 1: Wpisz VIN */}
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-300 mb-1.5">
+                  Wpisz numer VIN pojazdu
+                </label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="np. W1K2974241A019234"
+                    value={newVin}
+                    onChange={(e) => setNewVin(e.target.value.toUpperCase())}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleDecodeVin}
+                    disabled={vinLoading}
+                    className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition-colors"
+                  >
+                    {vinLoading ? 'Pobieranie...' : 'Dekoduj'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Pobierzemy rocznik, silnik, napęd i historię szkodowości prosto z rejestrów.
+                </p>
+              </div>
+
+              {/* Wyniki pobrania z bazy */}
+              {decodedData && (
+                <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                    <CheckCircle2 className="w-4 h-4" /> Dane zweryfikowane
+                  </div>
+                  <div className="text-sm font-bold text-white">
+                    {decodedData.make} {decodedData.model} ({decodedData.year})
+                  </div>
+                  <div className="text-xs text-slate-300">
+                    Silnik: {decodedData.power} • {decodedData.fuelType} • {decodedData.drive}
+                  </div>
+                  <div className="text-[11px] text-emerald-300/80">
+                    Status: {decodedData.cepikStatus}
+                  </div>
+                </div>
+              )}
+
+              {/* Dodatkowe pola */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Cena (PLN)</label>
+                  <input 
+                    type="number" 
+                    placeholder="np. 219000"
+                    value={newCarPrice}
+                    onChange={(e) => setNewCarPrice(e.target.value)}
+                    required
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Przebieg (km)</label>
+                  <input 
+                    type="number" 
+                    placeholder="np. 42000"
+                    value={newCarMileage}
+                    onChange={(e) => setNewCarMileage(e.target.value)}
+                    required
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Transparentny cennik */}
+              <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400">
+                <div className="flex justify-between items-center mb-1">
+                  <span>Koszt wystawienia:</span>
+                  <span className="text-emerald-400 font-bold">0,00 zł (Darmowe)</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-slate-500">
+                  <span>Weryfikacja VIN i raport CEPiK:</span>
+                  <span className="text-slate-400">W cenie</span>
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold rounded-2xl text-sm transition-all shadow-lg shadow-emerald-500/20"
+              >
+                Opublikuj bezpłatne ogłoszenie
+              </button>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* STOPKA */}
+      <footer className="mt-20 border-t border-slate-800/80 bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-white text-base">Moto<span className="text-emerald-400">Spot</span></span>
+            <span>— Transparentna motoryzacja nowej generacji</span>
+          </div>
+
+          <div className="flex flex-wrap gap-6 text-slate-400">
+            <span className="hover:text-emerald-400 cursor-pointer">Wycena Rynkowa AI</span>
+            <span className="hover:text-emerald-400 cursor-pointer">Inspekcja 120 Punktów</span>
+            <span className="hover:text-emerald-400 cursor-pointer">Kalkulator Leasingowy</span>
+            <span className="hover:text-emerald-400 cursor-pointer">Cennik dla Dealerów</span>
+          </div>
+
+          <div>
+            © 2026 MotoSpot Polska. Wszelkie prawa zastrzeżone.
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
